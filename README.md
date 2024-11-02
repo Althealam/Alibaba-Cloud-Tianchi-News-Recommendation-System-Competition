@@ -4,30 +4,30 @@ This repository is used to document the code I reproduced from [datawhale](https
 
 ## Repository Structure
 
-/project-root
-│
-├── /src                   
-│   ├── /data_analysis    
-│   │   └── data_analysis.ipynb
-│   ├── /metrics           
-│   │   └── metrics_recall.py
-│   ├── /similarity        
-│   │   ├── sim_matrix.py
-│   │   └── cold_start_items.py
-│   ├── /recall           
-│   │   ├── recall.py
-│   │   ├── neg_sample.py
-│   │   └── sorting_with_model_ensemble.py
-│   ├── /feature_engineering 
-│   │   └── feature_engineering.py
-│   ├── /data_reading      
-│   │   └── data_reading.py
-│   ├── config.py         
-│   ├── main.ipynb         
-│   └── baseline.ipynb    
-│
-└── README.md            
-
+/project-root<br>
+│<br>
+├── /src    <br>               
+│   ├── /data_analysis    <br>
+│   │   └── data_analysis.ipynb<br>
+│   ├── /metrics          <br> 
+│   │   └── metrics_recall.py<br>
+│   ├── /similarity      <br>  
+│   │   ├── sim_matrix.py<br>
+│   │   └── cold_start_items.py<br>
+│   ├── /recall  <br>         
+│   │   ├── recall.py<br>
+│   │   ├── neg_sample.py<br>
+│   │   └── sorting_with_model_ensemble.py<br>
+│   ├── /feature_engineering <br>
+│   │   └── feature_engineering.py<br>
+│   ├── /data_reading  <br>    
+│   │   └── data_reading.py<br>
+│   ├── config.py   <br>      
+│   ├── main.ipynb  <br>       
+│   └── baseline.ipynb    <br>
+│<br>
+└── README.md    <br>        
+<br>
 
 ### Contents of the src Folder
 
