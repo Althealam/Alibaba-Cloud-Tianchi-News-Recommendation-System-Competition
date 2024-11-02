@@ -4,30 +4,9 @@ This repository is used to document the code I reproduced from [datawhale](https
 
 ## Repository Structure
 
-/project-root<br>
-│<br>
-├── /src    <br>               
-│   ├── /data_analysis    <br>
-│   │   └── data_analysis.ipynb<br>
-│   ├── /metrics          <br> 
-│   │   └── metrics_recall.py<br>
-│   ├── /similarity      <br>  
-│   │   ├── sim_matrix.py<br>
-│   │   └── cold_start_items.py<br>
-│   ├── /recall  <br>         
-│   │   ├── recall.py<br>
-│   │   ├── neg_sample.py<br>
-│   │   └── sorting_with_model_ensemble.py<br>
-│   ├── /feature_engineering <br>
-│   │   └── feature_engineering.py<br>
-│   ├── /data_reading  <br>    
-│   │   └── data_reading.py<br>
-│   ├── config.py   <br>      
-│   ├── main.ipynb  <br>       
-│   └── baseline.ipynb    <br>
-│<br>
-└── README.md    <br>        
-<br>
+- **data/**: Data files (not uploaded due to large size)
+- **tmp/**: Temporary files (not uploaded due to large size)
+- **src/**: Source code files
 
 ### Contents of the src Folder
 
@@ -49,4 +28,4 @@ This repository is used to document the code I reproduced from [datawhale](https
 The current progress of this project is **80%**, with the remaining tasks primarily focused on the implementation of the DIN model in the `main.ipynb` file and the model ensemble.
 
 ```plaintext
-Progress Bar: [███████████████████░░░░░] 80%
+Progress Bar: [██████████░░░░░░░░░░░░] 80%
