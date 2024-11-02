@@ -4,9 +4,30 @@ This repository is used to document the code I reproduced from [datawhale](https
 
 ## Repository Structure
 
-- **data/**: Data files (not uploaded due to large size)
-- **tmp/**: Temporary files(not uploaded due to large size)
-- **src/**: Source code files
+/project-root
+│
+├── /src                   
+│   ├── /data_analysis    
+│   │   └── data_analysis.ipynb
+│   ├── /metrics           
+│   │   └── metrics_recall.py
+│   ├── /similarity        
+│   │   ├── sim_matrix.py
+│   │   └── cold_start_items.py
+│   ├── /recall           
+│   │   ├── recall.py
+│   │   ├── neg_sample.py
+│   │   └── sorting_with_model_ensemble.py
+│   ├── /feature_engineering 
+│   │   └── feature_engineering.py
+│   ├── /data_reading      
+│   │   └── data_reading.py
+│   ├── config.py         
+│   ├── main.ipynb         
+│   └── baseline.ipynb    
+│
+└── README.md            
+
 
 ### Contents of the src Folder
 
