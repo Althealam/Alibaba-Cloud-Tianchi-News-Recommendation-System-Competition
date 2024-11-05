@@ -3,7 +3,7 @@ from tqdm import tqdm
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
-# 用户历史行为相关特征
+
 def create_feature(users_id, recall_list, click_hist_df,  articles_info, articles_emb, user_emb=None, N=1):
     """
     基于用户的历史行为做相关特征
@@ -14,6 +14,13 @@ def create_feature(users_id, recall_list, click_hist_df,  articles_info, article
     :param articles_emb: 文章的embedding向量, 这个可以用item_content_emb, item_w2v_emb, item_youtube_emb
     :param user_emb: 用户的embedding向量， 这个是user_youtube_emb, 如果没有也可以不用， 但要注意如果要用的话， articles_emb就要用item_youtube_emb的形式， 这样维度才一样
     :param N: 最近的N次点击  由于testA日志里面很多用户只存在一次历史点击， 所以为了不产生空值，默认是1
+
+    实现步骤：
+    1. 遍历用户ID，获取每个用户的最近N次点击
+    2. 对于召回的每篇文章，计算与用户最近点击文章的相似度、时间差、字数差等特征
+    3. 将相似度的统计特征（最大值、最小值、总和、均值）添加到特征列表中
+    4. 如果提供了用户的embedding，计算文章与用户之间的相似度
+    5. 最终返回一个包含所有用户特征的dataframe
     """
     
     # 建立一个二维列表保存结果， 后面要转成DataFrame
@@ -70,12 +77,20 @@ def create_feature(users_id, recall_list, click_hist_df,  articles_info, article
     return df
 
 
-# 区分用户活跃度的特征
+
 def active_level(all_data,cols):
     """
         制作区分用户活跃度的特征
         :param all_data: 数据集
         :cols: 用到的特征列
+
+        实现步骤：
+        1. 对数据按照用户ID和点击时间戳进行排序
+        2. 计算每个用户的点击次数以及点击时间戳列表
+        3. 计算用户点击时间间隔的均值
+        4. 对点击次数和时间间隔进行归一化处理
+        5. 计算用户活跃度特征（点击次数的倒数+时间间隔均值）
+        6. 最后返回一恶搞包含用户活跃度特征的df
     """
     data=all_data[cols]
     data.sort_values(['user_id','click_timestamp'],inplace=True)
@@ -105,12 +120,19 @@ def active_level(all_data,cols):
     return user_act
 
 
-# 衡量文章热度的特征
+
 def hot_level(all_data,cols):
     """
         制作衡量文章热度的特征
         :param all_data: 数据集
         :param cols: 用到的特征列
+
+        实现步骤：
+        1. 对数据按照文章ID和点击时间戳进行排序
+        2. 计算每篇文章的点击次数和点击时间戳列表
+        3. 计算被点击时间间隔的均值
+        4. 对用户数进行倒数处理，并对用户数和时间间隔进行归一化
+        5. 最后返回一个包含文章热度特征的DataFrame
     """
     data=all_data[cols]
     data.sort_values(['click_article_id','click_timestamp'],inplace=True)
@@ -139,12 +161,16 @@ def hot_level(all_data,cols):
     del article_hot['click_timestamp']
     return article_hot
 
-# 用户的设备习惯
+
 def device_fea(all_data,cols):
     """
         制作用户的设备特征
         :param all_data: 数据集
         :param cols: 用到的特征列
+
+        实现步骤：
+        1. 通过聚合用户的设备信息，使用众数来表示每个用户使用的主要设备类型
+        2. 返回一个包含用户设备信息的DataFrame
     """
     user_device_info=all_data[cols]
     
@@ -154,12 +180,17 @@ def device_fea(all_data,cols):
     return user_device_info
 
 
-# 用户的时间习惯
+
 def user_time_hob_fea(all_data,cols):
     """
         制作用户的时间习惯特征
         :param all_data: 数据集
         :param cols: 用到的特征列
+
+        实现步骤：
+        1. 对时间戳进行归一化处理
+        2. 计算每个用户的平均点击时间戳和文章创建时间戳
+        3. 返回一个包含用户时间习惯特征的DataFrame
     """
     user_time_hob_info=all_data[cols]
 
@@ -173,13 +204,16 @@ def user_time_hob_fea(all_data,cols):
     user_time_hob_info.rename(columns={'click_timestamp':'user_time_hob1','created_at_ts':'user_time_hob2'},inplace=True)
     return user_time_hob_info
 
-# 用户的主题爱好
-# 先把用户点击的文章属于的主题转换为一个列表
+
 def user_cat_hob_fea(all_data,cols):
     """
         用户的主题爱好
         :param all_data: 数据集
         :param cols: 用到的特征列
+
+        实现步骤：
+        1. 将用户点击的文章主题（类别）转换为一个列表
+        2. 返回一个包含用户ID及其喜欢的主题列表的DataFrame
     """
     user_category_hob_info=all_data[cols]
     user_category_hob_info=user_category_hob_info.groupby('user_id').agg({'category_id':list}).reset_index()
