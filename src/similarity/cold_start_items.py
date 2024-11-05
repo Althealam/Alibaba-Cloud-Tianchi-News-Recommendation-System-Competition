@@ -8,23 +8,31 @@ import pickle
 import datetime
 import pandas as pd
 
+
 def get_click_article_ids_set(all_click_df):
+    """
+        接收一个包含用户点击记录的dataframe，提取出所有点击过的文章ID，并以集合的形式返回
+        :param all_click_df：一个包含用户点击记录的dataframe
+        return: 所有点击过的文章ID的集合，方便后续过滤时排除已被用户浏览过的文章
+    """
     return set(all_click_df.click_article_id.values)
+
 
 def cold_start_items(user_recall_items_dict,user_hist_item_typs_dict,user_hist_item_words_dict,\
                     user_last_item_created_time_dict,item_type_dict,item_words_dict,
                     item_created_time_dict,click_article_ids_set,recall_item_num):
     """
         冷启动的情况下召回一些文章
-        :param user_recall_items_dict: 基于内容embedding相似性召回来的文章字典，{user1:[(item1,item2),...],...}
-        :param user_hist_item_typs_dict: 字典，用户点击的文章的主题映射
-        :param user_hist_item_words_dict: 字典，用户点击的历史文章的字数映射
-        :param user_last_item_created_time_dict: 字典，用户点击的历史文章创建时间映射
-        :param item_type_dict: 字典，文章主题映射
-        :param item_words_dict: 字典，文章字数映射
-        :param item_created_time_dict: 字典，文章创建时间映射
-        :param click_article_ids_set: 集合，用户点击过的文章，也就是日志里面出现过的文章
-        :param recall_item_num: 召回文章的数量（指的是没有出现在日志里面的文章数量） 
+        :param user_recall_items_dict: 用户的候选推荐文章字典，基于内容embedding相似性召回来的文章字典，{user1:[(item1,item2),...],...}
+        :param user_hist_item_typs_dict: 字典，用户历史点击的文章主题集合，记录礼物用户曾浏览过的文章主题
+        :param user_hist_item_words_dict: 字典，用户点击的历史文章的字数映射，记录了用户浏览文章的平均字数
+        :param user_last_item_created_time_dict: 字典，用户最后一次点击的历史文章创建时间映射，用于限制候选文章的时效性
+        :param item_type_dict: 字典，文章主题映射 {item_id: item_type}
+        :param item_words_dict: 字典，文章字数映射 {item_id: item_words}
+        :param item_created_time_dict: 字典，文章创建时间映射 {item_id: item_created_time}
+        :param click_article_ids_set: 集合，用户点击过的文章，也就是日志里面出现过的文章，用于过滤掉已经阅读过的文章
+        :param recall_item_num: 召回文章的数量（指的是没有出现在日志里面的文章数量）
+        return: cold_start_user_items_dict 
     """
     cold_start_user_items_dict={}
     for user,item_list in tqdm(user_recall_items_dict.items()):

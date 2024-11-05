@@ -8,12 +8,12 @@ import faiss
 import collections
 
 
-# 基于物品的协同过滤
 def itemcf_sim(df,item_created_time_dict):
     """
         文章与文章之间的相似性矩阵计算-->基于物品的协同过滤
-        df:数据表
-        item_created_time_dict:文章创建时间的字典
+        :param df:数据表
+        :param item_created_time_dict:文章创建时间的字典
+        
         return: 文章与文章的相似性矩阵
     """
     user_item_time_dict=get_user_item_time(df)
@@ -69,10 +69,9 @@ def itemcf_sim(df,item_created_time_dict):
     return i2i_sim_
 
 
-# item embedding sim 
 def embedding_sim(click_df, item_emb_df, save_path, topk):
     """
-        基于文章的嵌入向量embedding，计算文章之间的相似性矩阵
+        基于文章的嵌入向量embedding，计算文章之间的相似性矩阵-->基于物品嵌入的相似度计算
         :param click_df: 数据表
         :param item_emb_df: 文章的embedding
         :param save_path: 保存路径
@@ -116,6 +115,10 @@ def embedding_sim(click_df, item_emb_df, save_path, topk):
 
 # 基于用户的协同过滤
 def get_user_activate_degree_dict(all_click_df):
+    """
+        获取用户的活跃度并归一化
+        :param all_click_df: 点击数据
+    """
     all_click_df_=all_click_df.groupby('user_id')['click_article_id'].count().reset_index()
     
     # 用户活跃度归一化
@@ -125,11 +128,12 @@ def get_user_activate_degree_dict(all_click_df):
     
     return user_activate_degree_dict
 
+
 def usercf_sim(all_click_df, user_activate_degree_dict):
     """
-        用户相似性矩阵计算
-        all_click_df: 数据表
-        user_activate_degree_dict: 用户活跃度的字典
+        用户相似性矩阵计算-->基于用户的协同过滤
+        :param all_click_df: 数据表
+        :param user_activate_degree_dict: 用户活跃度的字典
         return 用户相似性矩阵
         
         思路：基于用户的协同过滤+关联规则

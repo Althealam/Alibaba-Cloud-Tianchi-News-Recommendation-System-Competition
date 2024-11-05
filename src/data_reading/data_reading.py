@@ -1,10 +1,10 @@
 import pandas as pd  
 import numpy as np
-from tqdm import tqdm  
-from collections import defaultdict  
+from tqdm import tqdm # 进度条显示
+from collections import defaultdict 
 import os, math, warnings, math, pickle
 from tqdm import tqdm
-import faiss
+import faiss # 用于相似度搜索
 import collections
 import random
 from sklearn.preprocessing import MinMaxScaler
@@ -19,36 +19,42 @@ from deepmatch.models import YoutubeDNN
 from deepmatch.utils import sampledsoftmaxloss,NegativeSampler
 warnings.filterwarnings('ignore')
 import time
-import logging
-from gensim.models import Word2Vec
+import logging # 管理日志信息
+from gensim.models import Word2Vec # 实现Word2Vec词嵌入
 
-# debug模式：从训练集中划分一些数据来调试代码
+
 def get_all_click_sample(data_path, sample_nums):
     """
         从训练数据集中随机抽取一部分数据用于调试
-        data_path：原数据的存储路径
-        sample_nums：采样数目
+        :param data_path：原数据的存储路径
+        :param sample_nums：采样数目
+        输出：all_click（点击数据）
     """
+    # 读取点击日志
     all_click=pd.read_csv(data_path+'train_click_log.csv')
+    # 获取所有用户的ID
     all_user_ids=all_click.user_id.unique()
     
-    # 随机抽取sample_nums个数据
+    # 随机抽取sample_nums个用户ID
     sample_user_ids=np.random.choice(all_user_ids,size=sample_nums,replace=False)
-    # 获取sample_user_ids对应的在all_click中的数据
+    # 获取抽取到的用户ID的点击记录
     all_click=all_click[all_click['user_id'].isin(sample_user_ids)]
     
     all_click=all_click.drop_duplicates((['user_id','click_article_id','click_timestamp']))
     return all_click
 
-# 读取点击数据
+
 def get_all_click_df(data_path,offline=False):
     """
         从给定的路径中读取点击数据，并根据offline参数决定是仅读取训练数据还是同时读取训练和测试数据
-        data_path：原数据的存储路径
-        offline：表示是否处于离线模式。在离线模式下，只处理训练数据，否则，同时处理训练和测试数据
+        :param data_path：原数据的存储路径
+        :param offline：表示是否处于离线模式。在离线模式下，只处理训练数据，否则，同时处理训练和测试数据
+        输出：all_click（点击数据）
     """
+    # 当offline为True时，只加载训练数据
     if offline:
         all_click=pd.read_csv(data_path+'train_click_log.csv')
+    # 否则，加载训练集和测试集，并且去除重复记录
     else:
         trn_click=pd.read_csv(data_path+'train_click_log.csv')
         tst_click=pd.read_csv(data_path+'testA_click_log.csv')
@@ -60,8 +66,13 @@ def get_all_click_df(data_path,offline=False):
     all_click=all_click.drop_duplicates((['user_id','click_article_id','click_timestamp']))
     return all_click
 
-# 读取文章的基本属性
+
 def get_item_info_df(data_path):
+    """
+        读取文章属性数据
+        :param data_path: 原数据的存储路径
+        输出：item_info_df（文章属性数据）
+    """
     item_info_df=pd.read_csv(data_path+'articles.csv')
     
     # 为了与训练集中的click_article_id进行拼接，修改article_id为click_article_id
@@ -69,8 +80,12 @@ def get_item_info_df(data_path):
     
     return item_info_df
 
-# 读取文章的embedding属性
+
 def get_item_emb_dict(data_path):
+    """
+        读取文章的embedding信息
+        data_path: 原数据的存储路径
+    """
     item_emb_df=pd.read_csv(data_path+'articles_emb.csv')
     # 创建列表item_emb_cols，包含item_emb_df中所有列名包含'emb'的列（用于筛选出包含嵌入向量的列）
     item_emb_cols=[x for x in item_emb_df.columns if 'emb' in x]
@@ -88,8 +103,13 @@ def get_item_emb_dict(data_path):
     
     return item_emb_dict
 
-# 节省内存函数
+
 def reduce_mem(df):
+    """
+        节省内存函数，将df中的数据类型转换为内存占用较小的类型
+        :param df: 需要节省内存的dataframe
+        输出：df
+    """
     starttime = time.time()
     numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
     start_mem = df.memory_usage().sum() / 1024**2
@@ -122,12 +142,10 @@ def reduce_mem(df):
                                                                                                           (time.time()-starttime)/60))
     return df
 
-# 划分验证集和训练集
-# all_click_df：训练集
-# sample_user_nums：验证集的用户数量
+
 def trn_val_split(all_click_df,sample_user_nums):
     """
-        目的：从给定的训练集数据中分割出验证集和验证集的答案（验证集的标签）
+        从给定的训练集数据中分割出验证集和验证集的答案（验证集的标签）
         输入：all_click_df：完整的训练集数据，包含用户点击文章的记录
              sample_user_nums：需要抽取作为验证集的用户数量
         输出：click_trn：训练集数据
@@ -163,8 +181,14 @@ def trn_val_split(all_click_df,sample_user_nums):
     # 验证集数据：click_val
     # 验证集答案：val_ans
 
-# 读取训练、验证以及测试集
+
 def get_trn_val_tst_data(data_path,offline=False):
+    """
+        根据offline参数加载训练、验证和测试数据，并且进行内存优化
+        :param data_path: 数据路径
+        :param offline: 是否为离线模式
+        输出：click_trn（训练点击数据）, click_val（验证点击数据）, click_tst（测试点击数据）, val_ans（验证集ans）
+    """
     if offline:
         click_trn_data = pd.read_csv(data_path+'train_click_log.csv')  # 训练集用户点击日志
         # click_trn_data=all_click_df
@@ -180,8 +204,11 @@ def get_trn_val_tst_data(data_path,offline=False):
     
     return click_trn, click_val, click_tst, val_ans
 
-# 返回多路召回列表或者单路召回
+
 def get_recall_list(save_path, single_recall_model=None, multi_recall=False):
+    """
+        读取单路或者多路召回字典，支持嵌入向量和协同过滤召回模型
+    """
     # 多路召回
     if multi_recall:
         return pickle.load(open(save_path + 'final_recall_items_dict.pkl', 'rb'))
@@ -195,8 +222,13 @@ def get_recall_list(save_path, single_recall_model=None, multi_recall=False):
         return pickle.load(open(save_path + 'itemcf_emb_dict.pkl', 'rb'))
     
 
-# 读取各种embedding
+
 def train_itrem_word2vec(click_df,embed_size=64,save_name='item_w2v_emb.pkl',split_char=' '):
+    """
+        读取文章ID的word2vec模型
+        按照点击时间排序后，以每个用户的点击序列作为word2vec输入
+        保存训练好的word2vec嵌入，并返回文章ID的嵌入向量字典
+    """
     click_df=click_df.sort_values('click_timestamp')
     # 只有转换成字符串才可以进行训练
     click_df['click_article_id']=click_df['click_article_id'].astype(str)
@@ -217,8 +249,12 @@ def train_itrem_word2vec(click_df,embed_size=64,save_name='item_w2v_emb.pkl',spl
     return item_w2v_emb_dict
 
 
-# 可以通过字典查询对应的item的Embedding
+
 def get_embedding(save_path, all_click_df):
+    """
+        读取各种embedding模型
+        检查并读取文章内容、Word2Vec和YoutubeDNN模型的embedding文件
+    """
     if os.path.exists(save_path + 'item_content_emb.pkl'):
         item_content_emb_dict = pickle.load(open(save_path + 'item_content_emb.pkl', 'rb'))
     else:
@@ -230,28 +266,26 @@ def get_embedding(save_path, all_click_df):
     else:
         item_w2v_emb_dict = trian_item_word2vec(all_click_df)
         
-    if os.path.exists(save_path + 'item_youtube_emb.pkl'):
-        item_youtube_emb_dict = pickle.load(open(save_path + 'item_youtube_emb.pkl', 'rb'))
-    else:
-        print('item_youtube_emb.pkl 文件不存在...')
     
-    if os.path.exists(save_path + 'user_youtube_emb.pkl'):
-        user_youtube_emb_dict = pickle.load(open(save_path + 'user_youtube_emb.pkl', 'rb'))
-    else:
-        print('user_youtube_emb.pkl 文件不存在...')
-    
-    return item_content_emb_dict, item_w2v_emb_dict, item_youtube_emb_dict, user_youtube_emb_dict
+    return item_content_emb_dict, item_w2v_emb_dict
 
-# 读取文章信息
+
 def get_article_info_df():
+    """
+        读取文章信息并减小内存
+    """
     article_info_df=pd.read_csv('/Users/linjiaxi/Desktop/RecommendationSystem/Competition/Alibaba - News Recommendation Competition/data/articles.csv')
     article_info_df = reduce_mem(article_info_df)
     
     return article_info_df
 
 
-# 读取各种embedding
 def trian_item_word2vec(click_df, embed_size=64, save_name='item_w2v_emb.pkl', split_char=' '):
+    """
+        读取文章ID的word2vec模型
+        按照点击时间排序后，以每个用户的点击序列作为word2vec输入
+        保存训练好的word2vec嵌入，并返回文章ID的嵌入向量字典
+    """    
     click_df = click_df.sort_values('click_timestamp')
     # 只有转换成字符串才可以进行训练
     click_df['click_article_id'] = click_df['click_article_id'].astype(str)
@@ -272,18 +306,3 @@ def trian_item_word2vec(click_df, embed_size=64, save_name='item_w2v_emb.pkl', s
     
     return item_w2v_emb_dict
 
-
-# 可以通过字典查询对应的item的Embedding
-def get_embedding(save_path, all_click_df):
-    if os.path.exists(save_path + 'item_content_emb.pkl'):
-        item_content_emb_dict = pickle.load(open(save_path + 'item_content_emb.pkl', 'rb'))
-    else:
-        print('item_content_emb.pkl 文件不存在...')
-        
-    # w2v Embedding是需要提前训练好的
-    if os.path.exists(save_path + 'item_w2v_emb.pkl'):
-        item_w2v_emb_dict = pickle.load(open(save_path + 'item_w2v_emb.pkl', 'rb'))
-    else:
-        item_w2v_emb_dict = trian_item_word2vec(all_click_df)
-    
-    return item_content_emb_dict, item_w2v_emb_dict
